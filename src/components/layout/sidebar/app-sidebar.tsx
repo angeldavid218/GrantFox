@@ -4,14 +4,7 @@ import type * as React from "react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-import {
-  HelpCircle,
-  Home,
-  LogOut,
-  Settings,
-  Sparkles,
-  User,
-} from "lucide-react";
+import { HelpCircle, Home, Sparkles } from "lucide-react";
 
 import {
   Sidebar,
@@ -22,18 +15,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/layout/sidebar/theme-toggler";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import Image from "next/image";
+import { NavUser } from "./nav-user";
 
 const navItems = [
   {
@@ -69,6 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: "",
     role: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -99,13 +87,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             role: profile.role || "grantee", // Default to grantee if no role is set
           });
         }
+        setIsLoading(false);
       }
     };
 
     fetchUserData();
   }, []);
 
-  // Filter navigation items based on user role
   const filteredNavItems = navItems.filter((item) =>
     item.roles.includes(userData.role),
   );
@@ -113,36 +101,56 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="p-3">
-        {/* GrantFox Logo and Branding */}
-        <div className="flex items-center gap-2 px-2">
-          <Image
-            src="/favicon.ico"
-            alt="GrantFox Logo"
-            width={32}
-            height={32}
-            className="rounded-md"
-          />
-          <span className="text-lg font-semibold">GrantFox</span>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/favicon.ico"
+              alt="GrantFox Logo"
+              width={32}
+              height={32}
+              className="rounded-md"
+            />
+            <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
+              GrantFox
+            </span>
+          </div>
+
+          <SidebarTrigger className="self-end group-data-[collapsible=icon]:hidden h-10 w-10 z-0" />
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarMenu className="px-2 py-2">
-          {filteredNavItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.url} className="flex items-center gap-2">
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {isLoading ? (
+            <>
+              {[1, 2, 3].map((i) => (
+                <SidebarMenuItem key={i}>
+                  <SidebarMenuButton className="w-full">
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                      <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </>
+          ) : (
+            filteredNavItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <a href={item.url} className="flex items-center gap-2">
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))
+          )}
         </SidebarMenu>
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex items-center justify-between px-4 py-2 group-data-[collapsible=icon]:px-2">
           <p className="text-sm font-medium group-data-[collapsible=icon]:hidden">
             Theme
           </p>
@@ -150,45 +158,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
         <Separator className="my-1" />
 
-        <div className="p-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton className="flex w-full items-center gap-2 rounded-md p-2 hover:bg-accent">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage
-                    src={userData.avatar || "/placeholder.svg"}
-                    alt={userData.name}
-                  />
-                  <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-1 flex-col items-start text-sm">
-                  <span className="font-medium">{userData.name}</span>
-                </div>
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="flex flex-col space-y-1 p-2">
-                <p className="text-xs font-medium leading-none text-muted-foreground">
-                  {userData.email}
-                </p>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <NavUser user={userData} />
       </SidebarFooter>
 
       <SidebarRail />
